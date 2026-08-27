@@ -8,6 +8,6 @@ month = int(sys.argv[1])
 df = pd.DataFrame({"day": [1, 2], "number_passangers": [3, 4]})
 print(df.head())
 
-df.to_parquet(f"output_{month}.parquet")
+df.to_parquet(f"output/output_{month}.parquet")
 
 print(f"Running pipeline for month {month}")
