@@ -1,21 +1,21 @@
 import pandas as pd
+
 from sqlalchemy import create_engine
+
 from tqdm.auto import tqdm
+
+import click
 
 
 # Configuration
-year = 2021
-month = 1
-target_table = "yellow_taxi_data"
 
-pg_user = "root"
-pg_pass = "root"
-pg_host = "localhost"
-pg_port = 5433
-pg_database = "my_taxi"
+year = 2021
+
+month = 1
 
 
 # Data types
+
 dtype = {
     "VendorID": "Int64",
     "passenger_count": "Int64",
@@ -42,52 +42,80 @@ parse_dates = [
 ]
 
 
-# URL
-url = (
-    f"https://github.com/DataTalksClub/nyc-tlc-data/releases/download/"
-    f"yellow/yellow_tripdata_{year}-{month:02d}.csv.gz"
-)
+# Click configuration
+
+@click.command()
+
+@click.option('--pg-user', default='root')
+
+@click.option('--pg-pass', default='root')
+
+@click.option('--pg-host', default='localhost')
+
+@click.option('--pg-port', default=5433, type=int)
+
+@click.option('--pg-db', default='my_taxi')
+
+@click.option('--target-table', default='yellow_taxi_data')
 
 
-# PostgreSQL connection
-engine = create_engine(
-    f"postgresql+psycopg://{pg_user}:{pg_pass}@"
-    f"{pg_host}:{pg_port}/{pg_database}"
-)
+def run(pg_user, pg_pass, pg_host, pg_port, pg_db, target_table):
 
 
-# Read data in chunks
-df_iter = pd.read_csv(
-    url,
-    dtype=dtype,
-    parse_dates=parse_dates,
-    iterator=True,
-    chunksize=100000
-)
+    # URL
 
-
-# Create table once, then insert chunks
-first = True
-
-for df_chunk in tqdm(df_iter):
-
-    if first:
-        df_chunk.head(0).to_sql(
-            name=target_table,
-            con=engine,
-            if_exists="replace"
-        )
-
-        first = False
-        print("Table created")
-
-    df_chunk.to_sql(
-        name=target_table,
-        con=engine,
-        if_exists="append"
+    url = (
+        f"https://github.com/DataTalksClub/nyc-tlc-data/releases/download/"
+        f"yellow/yellow_tripdata_{year}-{month:02d}.csv.gz"
     )
 
-    print("Inserted:", len(df_chunk))
+
+    # PostgreSQL connection
+
+    engine = create_engine(
+        f"postgresql+psycopg://{pg_user}:{pg_pass}@"
+        f"{pg_host}:{pg_port}/{pg_db}"
+    )
+
+
+    # Read data in chunks
+
+    df_iter = pd.read_csv(
+        url,
+        dtype=dtype,
+        parse_dates=parse_dates,
+        iterator=True,
+        chunksize=100000
+    )
+
+
+    # Create table once, then insert chunks
+
+    first = True
+
+    for df_chunk in tqdm(df_iter):
+
+        if first:
+
+            df_chunk.head(0).to_sql(
+                name=target_table,
+                con=engine,
+                if_exists="replace"
+            )
+
+            first = False
+
+            print("Table created")
+
+
+        df_chunk.to_sql(
+            name=target_table,
+            con=engine,
+            if_exists="append"
+        )
+
+        print("Inserted:", len(df_chunk))
+
 
 if __name__ == '__main__':
     run()
