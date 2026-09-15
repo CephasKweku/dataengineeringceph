@@ -1,0 +1,27 @@
+services:
+
+  pgdatabase:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: "root"
+      POSTGRES_PASSWORD: "root"
+      POSTGRES_DB: "my_taxi"
+    volumes:
+      - "ny_taxi_postgres_data:/var/lib/postgresql"
+    ports:
+      - "5433:5432"
+
+  taxi_ingest:
+    image: taxi_injest:v001
+    depends_on:
+      - pgdatabase
+    command:
+      - "--pg-user=root"
+      - "--pg-pass=root"
+      - "--pg-host=pgdatabase"
+      - "--pg-port=5432"
+      - "--pg-db=my_taxi"
+      - "--target-table=yellow_taxi_data"
+
+volumes:
+  ny_taxi_postgres_data:
